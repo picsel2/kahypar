@@ -23,6 +23,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "kahypar/definitions.h"
 
@@ -107,6 +108,7 @@ class Timer {
 
  public:
   void add(const Context& context, const Timepoint& timepoint, const double& time) {
+    auto lock = std::lock_guard<std::mutex>{_instance_mutex};
     _timings.emplace_back(context, timepoint, time);
   }
 
@@ -116,6 +118,7 @@ class Timer {
   }
 
   void clear() {
+    auto lock = std::lock_guard<std::mutex>{_instance_mutex};
     _timings.clear();
     _evaluated = false;
     _result = Result { };
@@ -123,6 +126,7 @@ class Timer {
 
 
   const Result & result() {
+    auto lock = std::lock_guard<std::mutex>{_instance_mutex};
     if (!_evaluated) {
       evaluate();
       _evaluated = true;
@@ -130,6 +134,7 @@ class Timer {
     return _result;
   }
   const Result & evolutionaryResult() {
+    auto lock = std::lock_guard<std::mutex>{_instance_mutex};
     _result.total_evolutionary = 0;
     std::vector<double> time_vector;
     for (const Timing& timing : _timings) {
@@ -247,6 +252,7 @@ class Timer {
     _result.total_postprocessing = _result.post_sparsifier_restore;
   }
 
+  std::mutex _instance_mutex{};
   Timepoint _current_timing;
   HighResClockTimepoint _start;
   HighResClockTimepoint _end;
